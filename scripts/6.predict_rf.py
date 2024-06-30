@@ -2,11 +2,11 @@ import pandas as pd
 from joblib import dump, load
 
 # Load the feature-engineered data
-df_test = pd.read_csv('./results/feature_engineering/feature_engineering_test.csv')
+df_test = pd.read_csv('./results/feature_engineering_test.csv')
 app_test = pd.read_csv('./data/application_test.csv')
 
 # Load the model using joblib.load
-model = load('./results/model/xgb_model.joblib')
+model = load('./results/xgb_model.joblib')
 
 # Predictions
 xgb_pred_test = model.predict_proba(df_test)[:,1]
