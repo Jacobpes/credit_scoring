@@ -57,4 +57,3 @@ fig.write_image(f'client_{client_id}_plot.png')
 # predict on the train set to get the id of one successful prediction and one failed prediction
 train = pd.read_csv('./data/application_train.csv')
 train['SK_ID_CURR'] = train['SK_ID_CURR'].astype(int)
-

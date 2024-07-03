@@ -1,0 +1,38 @@
+
+    <html>
+    <head>
+        <title>Client Loan Decision Explanation</title>
+        <style>
+            body { font-family: Arial, sans-serif; }
+            .container { display: flex; flex-direction: column; align-items: center; }
+            .shap-plot, .explanation { width: 80%; margin: 20px 0; }
+            iframe { width: 100%; height: 400px; border: none; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Client Loan Decision Explanation</h1>
+            
+            <h2>Training Set</h2>
+            <h3>Correct Example</h3>
+            <div class="shap-plot"><iframe src="../results/clients_outputs/force_plot_Training_100003.0.html"></iframe></div>
+            <div class="explanation"><p>Client SK_ID_CURR: 100003.0, Prediction: 0, Actual: 0. The most influential factors were: 139 (positively), 268 (positively), 92 (positively), 1 (negatively), 113 (negatively), 115 (negatively).</p></div>
+            
+            <h3>Incorrect Example</h3>
+            <div class="shap-plot"><iframe src="../results/clients_outputs/force_plot_Training_100002.0.html"></iframe></div>
+            <div class="explanation"><p>Client SK_ID_CURR: 100002.0, Prediction: 1, Actual: 0. The most influential factors were: 1 (positively), 113 (positively), 139 (positively), 115 (negatively), 31 (negatively), 144 (negatively).</p></div>
+            
+            <h2>Test Set</h2>
+            <h3>Test Example</h3>
+            <div class="shap-plot"><iframe src="../results/clients_outputs/force_plot_Test_100001.0.html"></iframe></div>
+            <div class="explanation"><p>Client SK_ID_CURR: 100001.0, Prediction: 1, Actual: 0. The most influential factors were: 1 (positively), 139 (positively), 31 (positively), 113 (negatively), 115 (negatively), 144 (negatively).</p></div>
+        </div>
+    </body>
+    </html>
+    
+                <div class="container">
+                    <h3>Specific Client Example (SK_ID_CURR: 100001)</h3>
+                    <div class="shap-plot"><iframe src="../results/clients_outputs/force_plot_Test_100001.0.html"></iframe></div>
+                    <div class="explanation"><p>Client SK_ID_CURR: 100001.0, Prediction: 1, Actual: 0. The most influential factors were: 1 (positively), 139 (positively), 31 (positively), 113 (negatively), 115 (negatively), 144 (negatively).</p></div>
+                </div>
+                

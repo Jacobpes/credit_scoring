@@ -5,7 +5,7 @@ from sklearn.preprocessing import LabelEncoder, RobustScaler
 from scipy import stats
 
 # Load the datasets train, test and the additional datasets
-app_train = pd.read_csv("./data/application_train.csv")
+app_train_complete = pd.read_csv("./data/application_train.csv")
 app_test = pd.read_csv("./data/application_test.csv")
 prev_app = pd.read_csv("./data/previous_application.csv")
 installments = pd.read_csv("./data/installments_payments.csv")
@@ -13,6 +13,14 @@ pos = pd.read_csv("./data/POS_CASH_balance.csv")
 bureau = pd.read_csv("./data/bureau.csv")
 bureau_bal = pd.read_csv("./data/bureau_balance.csv")
 credit_card = pd.read_csv("./data/credit_card_balance.csv")
+
+# copy app train to be able to use target column after preprocessing
+app_train = app_train_complete
+print("1. Checking if 'TARGET' column exists in app_train_complete:", 'TARGET' in app_train_complete.columns)
+
+# store id and target columns in a separate dataframe
+id_target = app_train[['SK_ID_CURR', 'TARGET']]
+
 
 def transform_column(df, column_name):
     # Apply the transformation function to the selected column
@@ -158,16 +166,16 @@ app_train['NAME_FAMILY_STATUS'] = app_train['NAME_FAMILY_STATUS'].apply(
 app_test['NAME_FAMILY_STATUS'] = app_test['NAME_FAMILY_STATUS'].apply(
     lambda x: 'High risk' if x in high else ('Medium risk' if x in medium else 'Low risk'))
 
-app_train['TARGET'] = app_train['TARGET']
 group_0 = app_train[app_train['TARGET'] == 0]['DAYS_EMPLOYED']
 group_1 = app_train[app_train['TARGET'] == 1]['DAYS_EMPLOYED']
 
 group_0 = group_0.dropna()
 group_1 = group_1.dropna()
 
-t_stat, p_value = stats.ttest_ind(group_0, group_1, equal_var=False)
+# drop target column from the train set
+app_train.drop(columns='TARGET', inplace=True)
 
-app_train = app_train.drop(columns='TARGET')
+t_stat, p_value = stats.ttest_ind(group_0, group_1, equal_var=False)
 
 # Prepare lists to hold the new column values
 employed_mean_list = []
@@ -378,61 +386,57 @@ preprocessed_train.drop(columns='OWN_CAR_AGE', inplace=True)
 preprocessed_test.drop(columns='OWN_CAR_AGE', inplace=True)
 col_names=preprocessed_train.columns
 
-# fill the nan values in amt_req_credit_bureau, ext_source_mean, ext_source_std, dti, annuity_percent, days_employed_percent, credit_term with 0
-preprocessed_train['AMT_REQ_CREDIT_BUREAU_HOUR'] = preprocessed_train['AMT_REQ_CREDIT_BUREAU_HOUR'].fillna(0)
-preprocessed_test['AMT_REQ_CREDIT_BUREAU_HOUR'] = preprocessed_test['AMT_REQ_CREDIT_BUREAU_HOUR'].fillna(0)
-
-preprocessed_train['AMT_REQ_CREDIT_BUREAU_DAY'] = preprocessed_train['AMT_REQ_CREDIT_BUREAU_DAY'].fillna(0)
-preprocessed_test['AMT_REQ_CREDIT_BUREAU_DAY'] = preprocessed_test['AMT_REQ_CREDIT_BUREAU_DAY'].fillna(0)
-
-preprocessed_train['AMT_REQ_CREDIT_BUREAU_WEEK'] = preprocessed_train['AMT_REQ_CREDIT_BUREAU_WEEK'].fillna(0)
-preprocessed_test['AMT_REQ_CREDIT_BUREAU_WEEK'] = preprocessed_test['AMT_REQ_CREDIT_BUREAU_WEEK'].fillna(0)
-
-preprocessed_train['AMT_REQ_CREDIT_BUREAU_MON'] = preprocessed_train['AMT_REQ_CREDIT_BUREAU_MON'].fillna(0)
-preprocessed_test['AMT_REQ_CREDIT_BUREAU_MON'] = preprocessed_test['AMT_REQ_CREDIT_BUREAU_MON'].fillna(0)
-
-preprocessed_train['AMT_REQ_CREDIT_BUREAU_QRT'] = preprocessed_train['AMT_REQ_CREDIT_BUREAU_QRT'].fillna(0)
-preprocessed_test['AMT_REQ_CREDIT_BUREAU_QRT'] = preprocessed_test['AMT_REQ_CREDIT_BUREAU_QRT'].fillna(0)
-
-preprocessed_train['AMT_REQ_CREDIT_BUREAU_YEAR'] = preprocessed_train['AMT_REQ_CREDIT_BUREAU_YEAR'].fillna(0)
-preprocessed_test['AMT_REQ_CREDIT_BUREAU_YEAR'] = preprocessed_test['AMT_REQ_CREDIT_BUREAU_YEAR'].fillna(0)
-
-preprocessed_train['EXT_SOURCE_MEAN'] = preprocessed_train['EXT_SOURCE_MEAN'].fillna(0)
-preprocessed_test['EXT_SOURCE_MEAN'] = preprocessed_test['EXT_SOURCE_MEAN'].fillna(0)
-
-preprocessed_train['EXT_SOURCE_STD'] = preprocessed_train['EXT_SOURCE_STD'].fillna(0)
-preprocessed_test['EXT_SOURCE_STD'] = preprocessed_test['EXT_SOURCE_STD'].fillna(0)
-
-preprocessed_train['DTI'] = preprocessed_train['DTI'].fillna(0)
-preprocessed_test['DTI'] = preprocessed_test['DTI'].fillna(0)
-
-preprocessed_train['ANNUITY_PERCENT'] = preprocessed_train['ANNUITY_PERCENT'].fillna(0)
-preprocessed_test['ANNUITY_PERCENT'] = preprocessed_test['ANNUITY_PERCENT'].fillna(0)
-
-preprocessed_train['DAYS_EMPLOYED_PERCENT'] = preprocessed_train['DAYS_EMPLOYED_PERCENT'].fillna(0)
-preprocessed_test['DAYS_EMPLOYED_PERCENT'] = preprocessed_test['DAYS_EMPLOYED_PERCENT'].fillna(0)
-
-preprocessed_train['CREDIT_TERM'] = preprocessed_train['CREDIT_TERM'].fillna(0)
-preprocessed_test['CREDIT_TERM'] = preprocessed_test['CREDIT_TERM'].fillna(0)
-
-preprocessed_train['STATUS_CHANGE'] = preprocessed_train['STATUS_CHANGE'].fillna(0)
-preprocessed_test['STATUS_CHANGE'] = preprocessed_test['STATUS_CHANGE'].fillna(0)
-
 print(f"Train shape: {preprocessed_train.shape}")
 print(f"Test shape: {preprocessed_test.shape}")
 # print the number of nan values in the train and test sets
 print(f"Number of nan values in train set: {preprocessed_train.isna().sum().sum()}")
 print(f"Number of nan values in test set: {preprocessed_test.isna().sum().sum()}")
 
+# TODO: Impute some of the missing values in the train and test sets using the KNNImputer, then impute the remaining missing values using the SimpleImputer with the median strategy
+imputer = KNNImputer(n_neighbors=5)
+preprocessed_train['AMT_ANNUITY'] = imputer.fit_transform(preprocessed_train[['AMT_ANNUITY']])
+preprocessed_test['AMT_ANNUITY'] = imputer.transform(preprocessed_test[['AMT_ANNUITY']])
+
+preprocessed_train['EXT_SOURCE_2'] = imputer.fit_transform(preprocessed_train[['EXT_SOURCE_2']])
+preprocessed_test['EXT_SOURCE_2'] = imputer.transform(preprocessed_test[['EXT_SOURCE_2']])
+
+preprocessed_train['EXT_SOURCE_3'] = imputer.fit_transform(preprocessed_train[['EXT_SOURCE_3']])
+preprocessed_test['EXT_SOURCE_3'] = imputer.transform(preprocessed_test[['EXT_SOURCE_3']])
+
+preprocessed_train['OBS_30_CNT_SOCIAL_CIRCLE'] = imputer.fit_transform(preprocessed_train[['OBS_30_CNT_SOCIAL_CIRCLE']])
+preprocessed_test['OBS_30_CNT_SOCIAL_CIRCLE'] = imputer.transform(preprocessed_test[['OBS_30_CNT_SOCIAL_CIRCLE']])
+
+preprocessed_train['DEF_30_CNT_SOCIAL_CIRCLE'] = imputer.fit_transform(preprocessed_train[['DEF_30_CNT_SOCIAL_CIRCLE']])
+preprocessed_test['DEF_30_CNT_SOCIAL_CIRCLE'] = imputer.transform(preprocessed_test[['DEF_30_CNT_SOCIAL_CIRCLE']])
+
+preprocessed_train['OBS_60_CNT_SOCIAL_CIRCLE'] = imputer.fit_transform(preprocessed_train[['OBS_60_CNT_SOCIAL_CIRCLE']])
+preprocessed_test['OBS_60_CNT_SOCIAL_CIRCLE'] = imputer.transform(preprocessed_test[['OBS_60_CNT_SOCIAL_CIRCLE']])
+
+preprocessed_train['DEF_60_CNT_SOCIAL_CIRCLE'] = imputer.fit_transform(preprocessed_train[['DEF_60_CNT_SOCIAL_CIRCLE']])
+preprocessed_test['DEF_60_CNT_SOCIAL_CIRCLE'] = imputer.transform(preprocessed_test[['DEF_60_CNT_SOCIAL_CIRCLE']])
+
+preprocessed_train['AMT_REQ_CREDIT_BUREAU_HOUR'] = imputer.fit_transform(preprocessed_train[['AMT_REQ_CREDIT_BUREAU_HOUR']])
+preprocessed_test['AMT_REQ_CREDIT_BUREAU_HOUR'] = imputer.transform(preprocessed_test[['AMT_REQ_CREDIT_BUREAU_HOUR']])
+
+preprocessed_train['AMT_REQ_CREDIT_BUREAU_DAY'] = imputer.fit_transform(preprocessed_train[['AMT_REQ_CREDIT_BUREAU_DAY']])
+preprocessed_test['AMT_REQ_CREDIT_BUREAU_DAY'] = imputer.transform(preprocessed_test[['AMT_REQ_CREDIT_BUREAU_DAY']])
+
+preprocessed_train['AMT_REQ_CREDIT_BUREAU_WEEK'] = imputer.fit_transform(preprocessed_train[['AMT_REQ_CREDIT_BUREAU_WEEK']])
+preprocessed_test['AMT_REQ_CREDIT_BUREAU_WEEK'] = imputer.transform(preprocessed_test[['AMT_REQ_CREDIT_BUREAU_WEEK']])
+
+preprocessed_train['AMT_REQ_CREDIT_BUREAU_MON'] = imputer.fit_transform(preprocessed_train[['AMT_REQ_CREDIT_BUREAU_MON']])
+preprocessed_test['AMT_REQ_CREDIT_BUREAU_MON'] = imputer.transform(preprocessed_test[['AMT_REQ_CREDIT_BUREAU_MON']])
+
+preprocessed_train['AMT_REQ_CREDIT_BUREAU_QRT'] = imputer.fit_transform(preprocessed_train[['AMT_REQ_CREDIT_BUREAU_QRT']])
+preprocessed_test['AMT_REQ_CREDIT_BUREAU_QRT'] = imputer.transform(preprocessed_test[['AMT_REQ_CREDIT_BUREAU_QRT']])
+
+preprocessed_train['AMT_REQ_CREDIT_BUREAU_YEAR'] = imputer.fit_transform(preprocessed_train[['AMT_REQ_CREDIT_BUREAU_YEAR']])
+preprocessed_test['AMT_REQ_CREDIT_BUREAU_YEAR'] = imputer.transform(preprocessed_test[['AMT_REQ_CREDIT_BUREAU_YEAR']])
+
+# Rest are to be Filled with SimpleImputer:
 imputer = SimpleImputer(strategy = 'median')
 preprocessed_train = imputer.fit_transform(preprocessed_train)
 preprocessed_test = imputer.transform(preprocessed_test)
-
-# imputer = KNNImputer(n_neighbors=5)
-# preprocessed_train = imputer.fit_transform(preprocessed_train)
-# preprocessed_test = imputer.transform(preprocessed_test)
-# save the id and target of the columns and rows to not lose them after scaling, we will not scale the target column or the id column
-# save also the following rows to add them back after scaling: 
 
 scaler = RobustScaler()
 preprocessed_train = scaler.fit_transform(preprocessed_train)
@@ -446,11 +450,16 @@ preprocessed_test = pd.DataFrame(preprocessed_test, columns=col_names)
 preprocessed_train['SK_ID_CURR'] = app_train['SK_ID_CURR']
 preprocessed_test['SK_ID_CURR'] = app_test['SK_ID_CURR']
 
-preprocessed_train['TARGET'] = app_train['TARGET']
-
+# put back target column into the train set using id_target
+preprocessed_train = preprocessed_train.merge(id_target, on='SK_ID_CURR', how='left')
 
 print(f"Train shape: {preprocessed_train.shape}")
 print(f"Test shape: {preprocessed_test.shape}")
+
+# print heads
+print("train head", preprocessed_train.head())
+print("test head", preprocessed_test.head())
+
 # print the number of nan values in the train and test sets
 print(f"Number of nan values in train set: {preprocessed_train.isna().sum().sum()}")
 print(f"Number of nan values in test set: {preprocessed_test.isna().sum().sum()}")
